@@ -117,9 +117,12 @@ float:left; margin: 20px;}
                   }
 
                   for(var i = 0; i < data.businesses.length; i++){
-                     data.businesses[i].categories = data.businesses[i].categories;
+                    console.log(data.businesses[i].categories)
+                    if(data.businesses[i].categories != undefined){
+                     data.businesses[i].categories = data.businesses[i].categories[0][0];
                      data.businesses[i].distance = metersToMiles(data.businesses[i].distance);
                      data.businesses[i].location.display_address = data.businesses[i].location.display_address.join(",");
+                    }
                   }
 
                   app.trigger("render", [params[0], data]);
