@@ -1,0 +1,174 @@
+
+<!--
+This example is a proof of concept, for how to use the Yelp v2 API with javascript.
+You wouldn't actually want to expose your access token secret like this in a real application.
+-->
+
+<html> 
+<head> 
+<title>Yelp OAuth Example</title> 
+<style type="text/css">
+  body{background-color: blue;}
+  .item{height: 200px; width:200px; text-align: center; color:black; background-color: white;
+  -webkit-border-radius: 10px;
+-moz-border-radius: 10px;
+border-radius: 10px;
+float:left; margin: 20px;}
+  .distance{margin-top: 140px;}
+</style>
+
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script> 
+<script type="text/javascript" src="http://oauth.googlecode.com/svn/code/javascript/oauth.js"></script>
+<script type="text/javascript" src="http://oauth.googlecode.com/svn/code/javascript/sha1.js"></script>
+<script type="text/javascript" src="https://raw.github.com/quirkey/sammy/master/lib/sammy.js"></script>
+<script type="text/javascript" src="https://raw.github.com/janl/mustache.js/master/mustache.js"></script>
+<script type="text/javascript" charset="utf-8">
+    
+
+    (function($) {
+      function metersToMiles(meters){
+        var res = meters / 1609.34;
+        return Math.round(res*100)/100;
+      }
+
+
+      var auth = { 
+        consumerKey: "0ZKN_1ubD5VzjKVGgadXGw",
+        consumerSecret: "ggqJJxezjx3K-n9gXf_rBId1YuM",
+        accessToken: "f_lizl4R3AxY_-HhYUbTy8G1BKhMtvKP",
+        accessTokenSecret: "g7BArOioU4-URXZDqITDjCzs6WA",
+        serviceProvider: { 
+         signatureMethod: "HMAC-SHA1"
+        }
+      };
+
+      var accessor = {
+        consumerSecret: auth.consumerSecret,
+        tokenSecret: auth.accessTokenSecret
+      };
+
+
+      var app = $.sammy(function() {
+
+        this.get('#/', function() {
+
+          console.log(auth);
+          if(this.params['like']){
+            this.trigger("yelpSearch",["hello", this.params['like']]);
+          }else{
+            this.trigger("yelpSearch",["hello"]);
+          }
+        });
+
+      });
+
+      app.bind("render", function(e, params){
+           var tpl =  $('#'+params[0]).html();
+           console.log(tpl);
+          var rendered = Mustache.render(tpl, params[1]);
+          console.log(rendered);
+           $('#main').html(rendered);
+      });
+
+      app.bind("yelpSearch", function(e, params){
+          parameters = [];
+          parameters.push(['callback', 'cb']);
+          parameters.push(['oauth_consumer_key', auth.consumerKey]);
+          parameters.push(['oauth_consumer_secret', auth.consumerSecret]);
+          parameters.push(['oauth_token', auth.accessToken]);
+          parameters.push(['oauth_signature_method', 'HMAC-SHA1']);
+
+          if(params[1]){
+            var term = "&term=" + params[1];
+          }else{
+            var term = "";
+          }
+
+
+          if (navigator.geolocation){
+
+            navigator.geolocation.getCurrentPosition(function(position){
+              var longit = position.coords.longitude;
+              var lat = position.coords.latitude;
+              var message = { 
+                'action': 'http://api.yelp.com/v2/search?sort=1&ll='+ lat +',' + longit + term,
+                'method': 'GET', 
+                'parameters': parameters 
+              };
+
+              OAuth.setTimestampAndNonce(message);
+              OAuth.SignatureMethod.sign(message, accessor);
+
+              var parameterMap = OAuth.getParameterMap(message.parameters);
+              parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature)
+              console.log(parameterMap);
+              $.ajax({
+                'url': message.action,
+                'data': parameterMap,
+                'cache': true,
+                'dataType': 'jsonp',
+                'jsonpCallback': 'cb',
+                'success': function(data, textStats, XMLHttpRequest) {
+                  console.log(data);
+
+                  if(term != ""){
+                    data.directions = true;    
+                  }
+
+                  for(var i = 0; i < data.businesses.length; i++){
+                     data.businesses[i].categories = data.businesses[i].categories[0][0];
+                     data.businesses[i].distance = metersToMiles(data.businesses[i].distance);
+                     data.businesses[i].location.display_address = data.businesses[i].location.display_address.join(",");
+                  }
+
+                  app.trigger("render", [params[0], data]);
+                }
+              });              
+            });
+
+          }else{
+            alert("Geolocation is not supported by this browser.");
+          }
+          
+
+      });
+
+
+
+      $(function() {
+        app.run('#/')
+      });
+    })(jQuery);
+  </script>
+<script type="text/javascript">
+</script>
+</head> 
+<body>
+  <div id="container">
+    <div id="main">
+     </div>
+  <script id="hello" type="text/javascript">
+    {{#businesses}}
+      {{#directions}}
+      <a href="https://maps.google.com/maps?ie=UTF8&f=d&daddr={{location.display_address}}" target="_blank">
+      {{/directions}}
+      {{^directions}}
+      <a href="#/?like={{categories}}">
+      {{/directions}}
+      <div class="item" style="background-image:url({{#image_url}}{{image_url}}{{/image_url}}{{^image_url}}images/imgres-2.jpeg{{/image_url}});background-repeat:no-repeat;background-position:center;">
+        {{name}}
+        <br>
+        <div class="distance">{{distance}}</div>
+      </div>
+      </a>
+    {{/businesses}}
+    {{^businesses}}
+      No Suggestion Found
+    {{/businesses}}
+
+  </script>
+</body>
+</html>
+
+
