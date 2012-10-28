@@ -8,13 +8,20 @@ You wouldn't actually want to expose your access token secret like this in a rea
 <head> 
 <title>BlueBoard Alpha</title> 
 <style type="text/css">
-  body{background-color: blue;}
-  .item{height: 200px; width:200px; text-align: center; color:black; background-color: white;
-  -webkit-border-radius: 10px;
--moz-border-radius: 10px;
-border-radius: 10px;
-float:left; margin: 20px;}
-  .distance{margin-top: 140px;}
+  body{background-color: blue; font-family: sans-serif; font-weight: bold;}
+  .item{
+    height: 200px; 
+    width:200px; 
+    text-align: center; 
+    color:black; 
+    background-color: white;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    float:left; margin: 20px;
+    padding:20px;
+  }
+  .distance{margin-top: 160px;}
 </style>
 
 
@@ -55,20 +62,18 @@ float:left; margin: 20px;}
 
           console.log(auth);
           if(this.params['like']){
-            this.trigger("yelpSearch",["hello", this.params['like']]);
+            this.trigger("yelpSearch",["items", this.params['like']]);
           }else{
-            this.trigger("yelpSearch",["hello"]);
+            this.trigger("yelpSearch",["items"]);
           }
         });
 
       });
 
       app.bind("render", function(e, params){
-           var tpl =  $('#'+params[0]).html();
-           console.log(tpl);
+          var tpl =  $('#'+params[0]).html();
           var rendered = Mustache.render(tpl, params[1]);
-          console.log(rendered);
-           $('#main').html(rendered);
+          $('#main').html(rendered);
       });
 
       app.bind("yelpSearch", function(e, params){
@@ -117,7 +122,6 @@ float:left; margin: 20px;}
                   }
 
                   for(var i = 0; i < data.businesses.length; i++){
-                    console.log(data.businesses[i].categories)
                     if(data.businesses[i].categories != undefined){
                      data.businesses[i].categories = data.businesses[i].categories[0][0];
                      data.businesses[i].distance = metersToMiles(data.businesses[i].distance);
@@ -151,7 +155,7 @@ float:left; margin: 20px;}
   <div id="container">
     <div id="main">
      </div>
-  <script id="hello" type="text/javascript">
+  <script id="items" type="text/javascript">
     {{#businesses}}
       {{#directions}}
       <a href="https://maps.google.com/maps?ie=UTF8&f=d&daddr={{location.display_address}}" target="_blank">
@@ -159,7 +163,7 @@ float:left; margin: 20px;}
       {{^directions}}
       <a href="#/?like={{categories}}">
       {{/directions}}
-      <div class="item" style="background-image:url({{#image_url}}{{image_url}}{{/image_url}}{{^image_url}}images/imgres-2.jpeg{{/image_url}});background-repeat:no-repeat;background-position:center;">
+      <div class="item" style="background-image:url({{#image_url}}{{image_url}}{{/image_url}}{{^image_url}}images/imgres-2.png{{/image_url}});background-repeat:no-repeat;background-position:center;">
         {{name}}
         <br>
         <div class="distance">{{distance}}</div>
